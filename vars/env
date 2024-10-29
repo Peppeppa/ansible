@@ -33,15 +33,15 @@ nas_mount_point: "/mnt/storage" # local nas mount point
 
 
 #--------------------------------------------------------------------------------------
-#custos-archivi-primus		BACKUPCONTROLLER
+#backup		BACKUPCONTROLLER
 #
 nas_backup_mountpoint: /mnt/nas_backups 	# Mountpoint auf dem controller
 nas_backup_path: "{{ nas_ip }}/Backups"		# NAS pfad
 #gocryptfs_password_backup: 			# depricated
 
 #container			docker config
-custos-archivi-primus_portainer_port1: 8000		#Portainerport 1
-custos-archivi-primus_portainer_port2: 9443		#Portainerport 2
+backup_portainer_port1: 8000		#Portainerport 1
+backup_portainer_port2: 9443		#Portainerport 2
 
 # Hetzner Cloud			Credentials for Hetznercloud
 hetzner_storagebox_user: uxxxxxxx		# Hetzner storagebox username
