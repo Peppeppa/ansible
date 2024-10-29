@@ -1,0 +1,51 @@
+# Playbook für meine Server Umgebung
+#
+
+
+- hosts: all
+  connection: local
+  tags: always
+  become: true
+  pre_tasks:
+    - name: pre-run | update package cache (arch)
+      tags: always
+      pacman: update_cache=yes
+      changed_when: False
+      when: ansible_distribution == "Archlinux"
+
+    - name: pre-run | update package cache (debian, etc)
+      tags: always
+      apt: update_cache=yes
+      changed_when: False
+      when: ansible_distribution in ["Debian", "Ubuntu"]
+
+    - name: Load variables
+      tags: always
+      include_vars: env
+
+    # run roles
+- hosts: all
+  tags: base
+  become: true
+  roles:
+    - config-base
+    - user-main
+
+    # run roles
+- hosts: docker-host
+  tags: docker-host
+  become: true
+  roles:
+    - apptimus-prime
+
+- hosts: backbone
+  tags: backbone
+  become: true
+  roles:
+    - backbone
+
+#- hosts: ansible-controller
+  #  tags: ansbl-ctrl
+  #become: true
+  #roles:
+  #    - 

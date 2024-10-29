@@ -1,0 +1,36 @@
+---
+- name: apt_update
+  apt: update_cache=yes
+
+- name: restart_sshd
+  service:
+    name: "{{ openssh_service }}"
+    state: restarted
+
+- name: update_tmux_plugin_perms
+  file:
+    path: "{{ architect_user_dir }}/.tmux/plugins"
+    owner: "{{ architect_user }}"
+    group: "{{ architect_user }}"
+    recurse: true
+
+- name: update_vim_bundle_perms
+  file:
+    path: "{{ architect_user_dir }}/.vim/bundle"
+    owner: "{{ architect_user }}"
+    group: "{{ architect_user }}"
+    recurse: true
+
+- name: update_tmux_plugin_perms
+  file:
+    path: "{{ main_user_dir }}/.tmux/plugins"
+    owner: "{{ main_user }}"
+    group: "{{ main_user }}"
+    recurse: true
+
+- name: update_vim_bundle_perms
+  file:
+    path: "{{ main_user_dir }}/.vim/bundle"
+    owner: "{{ main_user }}"
+    group: "{{ main_user }}"
+    recurse: true

@@ -1,0 +1,101 @@
+#------------------------------------------------------------------------------------
+#			ANSIBLE SETUP
+#
+
+#------------     USERS     ------------
+# Hauptuser -> sudo account
+main_user: 			# username
+main_user_dir: "/home/{{ main_user }}"
+main_user_passwd: 		# userpassword
+main_user_dotfiles_repo: 	# dotfiles git repo
+
+# Ansibleuser -> auch sudo wird aber nur von ansible genutzt
+architect_user: 	        # username for the ansible remote user
+architect_user_dir: "/home/{{ architect_user }}"
+architect_user_passwd: 		# userpassword
+
+
+
+#----------    	misc 	---------------
+# notification
+log_notify_mail_adress:		# email for notification
+ssh_users: "{{ main_user }} {{ architect_user }}"  # ssh users, used in sshd.config add users here
+
+#--------------------------------------------------------------------------------------
+# NAS SETUP
+#
+smb_user: 			# username for smb nas access
+smb_password: 			# password for smb nas access
+nas_ip: "x.x.x.x"		# nas ip used in /etc/fstab
+nas_path: "{{ nas_ip }}/s-" 	#im playbook  folgt hier die variable {{ ansible_play_role_names }} im NAS muss somit für jede role ein Ordner mit dem Namen s-rollenname z.B. s-docker-host freigegeben werden
+nas_mount_point: "/mnt/storage" # local nas mount point
+
+
+
+#--------------------------------------------------------------------------------------
+#custos-archivi-primus		BACKUPCONTROLLER
+#
+nas_backup_mountpoint: /mnt/nas_backups 	# Mountpoint auf dem controller
+nas_backup_path: "{{ nas_ip }}/Backups"		# NAS pfad
+#gocryptfs_password_backup: 			# depricated
+
+#container			docker config
+custos-archivi-primus_portainer_port1: 8000		#Portainerport 1
+custos-archivi-primus_portainer_port2: 9443		#Portainerport 2
+
+# Hetzner Cloud			Credentials for Hetznercloud
+hetzner_storagebox_user: uxxxxxxx		# Hetzner storagebox username
+hetzner_storagebox_password:			# Hetzner storagebox password 
+hetzner_storagebox_mountpoint: /mnt/storagebox
+hetzner_storagebox_ssh_url: "ssh://{{ hetzner_storagebox_user }}@{{ hetzner_storagebox_user }}.your-storagebox.de:23"
+hetzner_storagebox_path: "{{ hetzner_storagebox_user }}.your-storagebox.de/backup"
+hetzner_storagebox_backuprepo_1: "{{ hetzner_storagebox_mountpoint }}/nas"
+hetzner_storagebox_repo_path: "{{ hetzner_storagebox_ssh_url }}/./nas"
+
+# BORG-BACKUP-SCRIPT
+borg_repo: "{{ hetzner_storagebox_repo_path }}"
+borg_passphrase: 				# strong password for borg encryption
+borg_restore_mount: /mnt/restore
+borg_log_file: nas-to-hetzner-backup
+borg_log_directory: /var/log/borg/
+borg_email_enabled: 1	# 0=dosable - 1=enable
+borg_email_address: "{{ log_notify_mail_adress }}"
+borg_email_level: 1	# 0=info, 1=warnings, 2=errors
+borg_script_path: "{{ architect_user_dir }}/borg"
+borg_ssh_key_path: "'ssh -i {{ architect_user_dir }}/.ssh/id_rsa'"
+borg_target: "{{ nas_backup_mountpoint }}"
+
+
+
+#---------------------------------------------------------------------------------
+#docker-host		APP VM
+#
+
+#container ports	docker config
+docker-host_portainer_port1: 8000
+docker-host_portainer_port2: 9443
+docker-host_paperless port: 1349
+
+#mountpoints
+docker_host_local_nas_mount_point: /mnt/nas_data
+docker_host_local_nas_mp_fotos: /mnt/nas_fotos
+
+
+
+#---------------------------------------------------------------------------------
+#backbone			SERVICE VM
+#
+#container ports	docker config
+backbone_portainer_port1: 8000
+backbone_portainer_port2: 9443
+backbone_local_nas_mount_point: /mnt/nas_data
+
+
+#---------------------------------------------------------------------------------
+#ansibe-controller	
+#
+conjouring-spellbook-repo:			# ansible git repo
+conjouring-spellbook-secret-repo:
+
+
+

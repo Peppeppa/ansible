@@ -1,0 +1,18 @@
+---
+
+
+
+- name: Lade distributionsspezifische Variablen
+  tags: vars
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution }}.yml"
+
+- block:
+ #Erstellen von Usern
+  - import_tasks: users/main_user.yml
+
+
+  # Install software
+  - import_tasks: software/dotfiles_main.yml
+

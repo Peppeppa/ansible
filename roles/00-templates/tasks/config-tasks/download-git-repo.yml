@@ -1,0 +1,88 @@
+---
+######################################################
+#
+#     Download a Git repo to  ~/git
+#
+######################################################
+# README:
+#
+#
+
+#-----------------------------------------------------
+#   Header & variablen
+#
+#- name: task-name | clone git repo | load variables 
+#  tags: tag1,tag2
+#  set_fact:
+#    user: 
+#    user_dir: 
+#    git_repo_url: "{{ beispiel_variable }}"
+
+#-----------------------------------------------------
+#   DEBUG
+#
+#- name: task-name | clone git repo | DEBUG - show loaded variables
+#  tags: tag1,tag2,debug
+#  debug:
+#    msg: 
+#      - "{{ user }}"
+#      - "{{ user_dir }}"
+#      - "{{ git_repo_url }}"
+
+
+#-----------------------------------------------------
+#   pre_tasks
+#
+
+- name: task-name | clone git repo | Ensure required packages are installed
+  tags: dotfiles
+  ansible.builtin.package:
+    name:
+      - git
+    state: present
+
+
+#-----------------------------------------------------
+#   Main
+#
+
+- name: task-name | clone git repo | Create git directory in home folder
+  tags: dotfiles
+  ansible.builtin.file:
+    path: "{{ user_dir }}/git"
+    state: directory
+    mode: '0755'
+    owner: "{{ user }}"
+    group: "{{ user }}"
+
+- name: task-name | clone git repo | Clone dotfiles repository
+  tags: dotfiles
+  ansible.builtin.git:
+    repo: '{{ git_repo_url }}'
+    dest: "{{ user_dir }}/git/{{ git_repo_url | basename | regex_replace('.git$', '') }}"
+    update: yes
+
+- name: task-name | clone git repo | Setze Besitzer und Gruppe für das geklonte Repository
+  tags: dotfiles
+  file:
+    path: "{{ user_dir }}/git/{{ git_repo_url | basename | regex_replace('.git$', '') }}"
+    owner: "{{ user }}"
+    group: "{{ user }}"
+    state: directory
+
+
+#-----------------------------------------------------
+#   post_tasks
+#
+
+
+#-----------------------------------------------------
+#   Handlers
+#
+
+
+#-----------------------------------------------------
+#   roles
+#
+
+

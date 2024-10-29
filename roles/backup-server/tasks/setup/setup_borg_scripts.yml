@@ -1,0 +1,202 @@
+---
+######################################################
+#
+#     Setup borg backup scripts
+#
+######################################################
+# README:
+# Downloads and sets up borg backup scripts from my Github Repo.
+# 
+#
+
+#-----------------------------------------------------
+#   Header & variablen
+#
+#- name: task_name | load variables 
+#  tags: tag1,tag2
+#  set_fact:
+#    var_1: 
+#    var_2: 
+#    var_3: "{{ beispiel_variable }}"
+#    var_4: 
+
+#-----------------------------------------------------
+#   DEBUG
+#
+#- name: task_name | DEBUG - show loaded variables
+#  tags: tag1,tag2,debug
+#  debug:
+#    msg: 
+#      - "{{ var_1 }}"
+#      - "{{ var_2 }}"
+#      - "{{ var_3 }}"
+#      - "{{ var_4 }}"
+
+
+#-----------------------------------------------------
+#   pre_tasks
+#
+
+
+#-----------------------------------------------------
+#   Main
+#
+- name: BORG | Ensure borg packages are installed
+  tags: backup,borg,borg_update
+  package:
+    name: 
+      - "{{ borg_package }}"
+      - fuse
+      - python3
+      - python3-llfuse
+    state: present
+    update_cache: yes
+
+- name: BORG | Ensure borg_script_path directory exists
+  tags: backup,borg,borg_update
+  file:
+    path: "{{ borg_script_path }}"
+    state: directory
+    owner: "{{ architect_user }}"
+    group: "{{ architect_user }}" 
+    mode: '0755'
+
+- name: BORG | Clone the Borg backup scripts repository
+  tags: backup,borg,borg_update,git
+  git:
+    repo: "https://github.com/Peppeppa/borg-backup.git"
+    dest: "{{ borg_script_path }}"
+    version: main  # Specify the branch or tag if needed
+    force: yes
+
+- name: BORG | Ensure borg_restore_mount directory exists
+  tags: backup,borg,borg_update,restoremount
+  file:
+    path: "{{ borg_restore_mount }}"
+    state: directory
+    owner: "{{ architect_user }}"
+    group: "{{ architect_user }}" 
+    mode: '0755'
+
+- name: BORG | Ensure borg_log_directory exists
+  tags: backup,borg,borg_update
+  file:
+    path: "{{ borg_log_directory }}"
+    state: directory
+    owner: "{{ architect_user }}"
+    group: "{{ architect_user }}" 
+    mode: '0755'
+
+- name: BORG | create .env
+  tags: backup,borg,env,borg_update
+  ansible.builtin.template: 
+    src: templates/env.j2
+    dest: "{{ borg_script_path }}/.env"
+    owner: "{{ architect_user }}"
+    group: "{{ architect_user }}" 
+    mode: '0600'
+
+- name: BORG | Ensure .ssh directory exists
+  tags: backup,borg,borg_update,borg_ssh
+  file:
+    path: /home/{{ architect_user }}/.ssh
+    state: directory
+    mode: '0700'
+    owner: "{{ architect_user }}"
+    group: "{{ architect_user }}"
+
+- name: BORG | Generate SSH key pair
+  tags: backup,borg,borg_update,borg_ssh
+  openssh_keypair:
+    path: /home/{{ architect_user }}/.ssh/id_rsa
+    type: rsa
+    size: 2048
+    owner: "{{ architect_user }}"
+    group: "{{ architect_user }}"
+    mode: '0600'
+  register: keypair
+
+- name: BORG | Ensure the public key file has correct permissions
+  tags: backup,borg,borg_update,borg_ssh
+  file:
+    path: "{{ architect_user_dir }}/.ssh/id_rsa.pub"
+    state: file
+    owner: "{{ architect_user }}"
+    group: "{{ architect_user }}"
+    mode: '0644'
+
+- name: BORG | Ensure hetzner is in fstab
+  tags: backup,borg,borg_update,borg_ssh
+  lineinfile:
+    path: /etc/fstab
+    line: "//{{ hetzner_storagebox_path }} {{ hetzner_storagebox_mountpoint }} cifs credentials={{ architect_user_dir }}/.cloudcredentials,iocharset=utf8,rw,_netdev,uid={{ architect_user }},gid={{ architect_user }},file_mode=0660,dir_mode=0770 0 0"
+    dest: "{{ architect_user_dir }}/.cloudcredentials"
+    state: present
+  become: yes
+
+- name: BORG | Ensure .ssh folder is in hetzner storagebox
+  tags: backup,borg,borg_update,borg_ssh
+  file:
+    path: "{{ hetzner_storagebox_mountpoint }}/.ssh"
+    state: directory
+    owner: "{{ architect_user }}"
+    group: "{{ architect_user }}" 
+    mode: '0700' 
+
+- name: BORG | Ensure authorized_keys is in hetzner storagebox
+  tags: backup,borg,borg_update,borg_ssh
+  file:
+    path: "{{ hetzner_storagebox_mountpoint }}/.ssh/authorized_keys"
+    state: touch
+    owner: "{{ architect_user }}"
+    group: "{{ architect_user }}" 
+    mode: '0600' 
+
+- name: BORG | copy pubilc ssh key to authorized_keys
+  tags: backup,borg,borg_update,borg_ssh
+  copy:
+    src: "{{ architect_user_dir }}/.ssh/id_rsa.pub"
+    dest: "{{ hetzner_storagebox_mountpoint }}/.ssh/authorized_keys"
+    remote_src: yes
+    owner: "{{ architect_user }}"
+    group: "{{ architect_user }}"
+    mode: '0600' 
+
+- name: BORG | Ensure directory for borg backup repo is in storagebox
+  tags: backup,borg,borg_update,borg_ssh
+  file:
+    path: "{{ hetzner_storagebox_backuprepo_1 }}"
+    state: directory
+    owner: "{{ architect_user }}"
+    group: "{{ architect_user }}" 
+    mode: '0700' 
+
+#- name: BORG | copy ssh to authorized keys in hetzner
+  #  tags: backup,borg,borg_update,borg_ssh
+  #lineinfile:
+    #  path: /mnt/storagebox/authorized_keys
+    #line: "{{ lookup('file', architect_user_dir ~ '/.ssh/id_rsa.pub') }}"
+    #state: present
+
+- name: Unmount the filesystem
+  tags: backup,borg,borg_update,borg_ssh
+  ansible.builtin.mount:
+    name: /mnt/storagebox
+    state: unmounted
+  become: yes
+
+#-----------------------------------------------------
+#   post_tasks
+#
+
+
+#-----------------------------------------------------
+#   Handlers
+#
+
+
+#-----------------------------------------------------
+#   roles
+#
+
+

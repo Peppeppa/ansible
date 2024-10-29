@@ -1,0 +1,13 @@
+---
+#-----------------------------------------------------------------------
+#     Main tasks file für die App vm.
+#
+# Install services
+#
+
+
+- block:
+  - import_tasks: "{{ role_path }}/tasks/setup-tasks/docker-ce-complete.yml"
+  - import_tasks: "{{ role_path }}/tasks/setup-tasks/portainer.yml"
+  - import_tasks: "{{ role_path }}/tasks/setup-tasks/setup-smb.yml"
+    
